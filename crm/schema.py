@@ -1,33 +1,40 @@
 import graphene
-from graphene_django.types import DjangoObjectType
+from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
 from django.core.validators import validate_email
 from django.db import transaction
 from .models import Customer, Product, Order
 from .filters import CustomerFilter, ProductFilter, OrderFilter
 
-# Define GraphQL types with Node interface for relay
+# ------------------------------
+# GraphQL Types with Relay Node
+# ------------------------------
 class CustomerType(DjangoObjectType):
     class Meta:
         model = Customer
         filterset_class = CustomerFilter
-        interfaces = (graphene.relay.Node,)  # Add Node for relay support
+        interfaces = (graphene.relay.Node,)  # Relay Node ensures connection support
 
 class ProductType(DjangoObjectType):
     class Meta:
         model = Product
         filterset_class = ProductFilter
-        interfaces = (graphene.relay.Node,)  # Add Node for relay support
+        interfaces = (graphene.relay.Node,)
 
 class OrderType(DjangoObjectType):
     class Meta:
         model = Order
         filterset_class = OrderFilter
-        interfaces = (graphene.relay.Node,)  # Add Node for relay support
+        interfaces = (graphene.relay.Node,)
 
-# Query class with filtering support
+# ------------------------------
+# Queries
+# ------------------------------
 class Query(graphene.ObjectType):
+    # Simple hello field
     hello = graphene.String()
+
+    # Relay connections with filters
     all_customers = DjangoFilterConnectionField(CustomerType)
     all_products = DjangoFilterConnectionField(ProductType)
     all_orders = DjangoFilterConnectionField(OrderType)
@@ -35,7 +42,10 @@ class Query(graphene.ObjectType):
     def resolve_hello(self, info):
         return "Hello, GraphQL!"
 
-# Mutation classes (unchanged from your setup)
+# ------------------------------
+# Mutations
+# ------------------------------
+# Customer mutations
 class CustomerInput(graphene.InputObjectType):
     name = graphene.String(required=True)
     email = graphene.String(required=True)
@@ -49,18 +59,13 @@ class CreateCustomer(graphene.Mutation):
         input = CustomerInput(required=True)
 
     def mutate(self, info, input):
-        try:
-            validate_email(input.email)
-            if Customer.objects.filter(email=input.email).exists():
-                raise Exception("Email already exists")
-            if input.phone and not (input.phone.startswith('+') or input.phone.replace('-', '').isdigit()):
-                raise Exception("Invalid phone format")
-            customer = Customer.objects.create(
-                name=input.name, email=input.email, phone=input.phone
-            )
-            return CreateCustomer(customer=customer, message="Customer created successfully")
-        except Exception as e:
-            raise Exception(str(e))
+        validate_email(input.email)
+        if Customer.objects.filter(email=input.email).exists():
+            raise Exception("Email already exists")
+        customer = Customer.objects.create(
+            name=input.name, email=input.email, phone=input.phone
+        )
+        return CreateCustomer(customer=customer, message="Customer created successfully")
 
 class BulkCreateCustomers(graphene.Mutation):
     customers = graphene.List(CustomerType)
@@ -86,6 +91,7 @@ class BulkCreateCustomers(graphene.Mutation):
                     errors.append(str(e))
         return BulkCreateCustomers(customers=customers, errors=errors)
 
+# Product mutations
 class ProductInput(graphene.InputObjectType):
     name = graphene.String(required=True)
     price = graphene.Float(required=True)
@@ -107,6 +113,7 @@ class CreateProduct(graphene.Mutation):
         )
         return CreateProduct(product=product)
 
+# Order mutations
 class OrderInput(graphene.InputObjectType):
     customer_id = graphene.ID(required=True)
     product_ids = graphene.List(graphene.ID, required=True)
@@ -134,8 +141,16 @@ class CreateOrder(graphene.Mutation):
         order.products.set(products)
         return CreateOrder(order=order)
 
+# ------------------------------
+# Root Mutation
+# ------------------------------
 class Mutation(graphene.ObjectType):
     create_customer = CreateCustomer.Field()
     bulk_create_customers = BulkCreateCustomers.Field()
     create_product = CreateProduct.Field()
     create_order = CreateOrder.Field()
+
+# ------------------------------
+# Schema
+# ------------------------------
+schema = graphene.Schema(query=Query, mutation=Mutation)

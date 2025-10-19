@@ -1,9 +1,9 @@
-from django_filters import FilterSet, CharFilter, DateTimeFilter, NumberFilter
+from django_filters import FilterSet, CharFilter, DateTimeFilter
 from .models import Customer, Product, Order
 
 class CustomerFilter(FilterSet):
-    name = CharFilter(lookup_expr='icontains')
-    email = CharFilter(lookup_expr='icontains')
+    name = CharFilter(lookup_expr='icontains')  # Case-insensitive partial match for name
+    email = CharFilter(lookup_expr='icontains')  # Case-insensitive partial match for email
     created_at_gte = DateTimeFilter(field_name='created_at', lookup_expr='gte')
     created_at_lte = DateTimeFilter(field_name='created_at', lookup_expr='lte')
     phone_pattern = CharFilter(method='filter_phone')
@@ -15,6 +15,7 @@ class CustomerFilter(FilterSet):
     def filter_phone(self, queryset, name, value):
         return queryset.filter(phone__startswith=value)
 
+# Include ProductFilter and OrderFilter for completeness
 class ProductFilter(FilterSet):
     name = CharFilter(lookup_expr='icontains')
     price_gte = NumberFilter(field_name='price', lookup_expr='gte')
