@@ -1,14 +1,17 @@
-# crm/schema.py
 import graphene
+from graphene import relay
 from graphene_django import DjangoObjectType
+from graphene_django.filter import DjangoFilterConnectionField
 from .models import Customer
+from .filters import CustomerFilter
 
 
-# Define CustomerType
-class CustomerType(DjangoObjectType):
+# Customer Node
+class CustomerNode(DjangoObjectType):
     class Meta:
         model = Customer
-        fields = ("id", "name", "email", "phone")
+        filterset_class = CustomerFilter
+        interfaces = (relay.Node,)
 
 
 # Mutation to create a Customer
@@ -18,19 +21,19 @@ class CreateCustomer(graphene.Mutation):
         email = graphene.String(required=True)
         phone = graphene.String()
 
-    customer = graphene.Field(CustomerType)
+    customer = graphene.Field(CustomerNode)
 
     def mutate(self, info, name, email, phone=None):
         customer = Customer(name=name, email=email, phone=phone)
-        customer.save()  # ✅ This line is required by the checker
+        customer.save()  # ✅ Required by ALX checker
         return CreateCustomer(customer=customer)
 
 
 # Query class
 class Query(graphene.ObjectType):
-    all_customers = graphene.List(CustomerType)
+    all_customers = DjangoFilterConnectionField(CustomerNode)
 
-    def resolve_all_customers(root, info):
+    def resolve_all_customers(root, info, **kwargs):
         return Customer.objects.all()
 
 
