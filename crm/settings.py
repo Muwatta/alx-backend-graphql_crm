@@ -16,6 +16,7 @@ INSTALLED_APPS = [
 
 CRONJOBS = [
     ('*/5 * * * *', 'crm.cron.log_crm_heartbeat'),
+    ('0 9 * * *', 'crm.cron.update_low_stock'),
 ]
 
 SECRET_KEY = 'dummy-key'

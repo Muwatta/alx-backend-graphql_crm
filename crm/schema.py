@@ -5,6 +5,8 @@ from graphene_django.filter import DjangoFilterConnectionField
 from .models import Customer
 from .filters import CustomerFilter
 from .models import Product
+from crm.models import Product
+
 
 
 # Customer Node
@@ -58,3 +60,20 @@ class UpdateLowStockProducts(graphene.Mutation):
 
 class Mutation(graphene.ObjectType):
     update_low_stock_products = UpdateLowStockProducts.Field()
+
+class ProductType(DjangoObjectType):
+    class Meta:
+        model = Product
+        fields = "__all__"
+
+
+class UpdateLowStockProducts(graphene.Mutation):
+    ok = graphene.Boolean()
+
+    @classmethod
+    def mutate(cls, root, info):
+        low_stock_products = Product.objects.filter(stock__lt=10)
+        for product in low_stock_products:
+            product.low_stock_alert = True
+            product.save()
+        return UpdateLowStockProducts(ok=True)
