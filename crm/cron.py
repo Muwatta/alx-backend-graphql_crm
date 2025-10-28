@@ -3,7 +3,7 @@ from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
 
 def update_low_stock():
-    log_file = "/tmp/lowstockupdates_log.txt"
+    log_file = "/tmp/low_stock_updates_log.txt"
     with open(log_file, "a") as f:
         f.write(f"{datetime.datetime.now()} - Updating low stock products...\n")
 
