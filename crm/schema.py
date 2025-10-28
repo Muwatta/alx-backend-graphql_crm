@@ -4,6 +4,7 @@ from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
 from .models import Customer
 from .filters import CustomerFilter
+from .models import Product
 
 
 # Customer Node
@@ -40,3 +41,20 @@ class Query(graphene.ObjectType):
 # Mutation root
 class Mutation(graphene.ObjectType):
     create_customer = CreateCustomer.Field()
+
+class UpdateLowStockProducts(graphene.Mutation):
+    message = graphene.String()
+    updated_products = graphene.List(graphene.String)
+
+    def mutate(self, info):
+        updated_names = []
+        low_stock_products = Product.objects.filter(stock__lt=10)
+        for p in low_stock_products:
+            p.stock += 10
+            p.save()
+            updated_names.append(f"{p.name} → {p.stock}")
+        message = "Low stock products updated successfully!"
+        return UpdateLowStockProducts(message=message, updated_products=updated_names)
+
+class Mutation(graphene.ObjectType):
+    update_low_stock_products = UpdateLowStockProducts.Field()
