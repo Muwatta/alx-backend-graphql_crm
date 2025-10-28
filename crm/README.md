@@ -1,7 +1,7 @@
-# CRM Celery Report Task Setup
+# CRM Celery and Celery Beat Setup
 
-## Installation Steps
+## Setup Instructions
 
-1. **Install dependencies**
+1. **Install Redis and dependencies**
    ```bash
-   pip install -r requirements.txt
+   pip install celery redis django-celery-beat
