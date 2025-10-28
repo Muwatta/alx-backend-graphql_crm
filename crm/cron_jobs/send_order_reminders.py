@@ -31,5 +31,5 @@ query = gql("""
 result = client.execute(query)
 
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-with open("/tmp/orderreminderslog.txt", "a") as f:
+with open("/tmp/order_reminders_log.txt", "a") as f:
     f.write(f"[{timestamp}] Successfully fetched {len(result.get('orders', []))} orders.\n")
