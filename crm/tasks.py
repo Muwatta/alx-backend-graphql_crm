@@ -1,50 +1,36 @@
 import datetime
+import requests
+from datetime import datetime
 from celery import shared_task
 from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
 
 @shared_task
 def generate_crm_report():
-    log_file = "/tmp/crm_report_log.txt"
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    """Generates weekly CRM report and logs to /tmp/crm_report_log.txt"""
+    url = "http://localhost:8000/graphql/"
+    query = """
+    {
+        customersCount
+        ordersCount
+        totalRevenue
+    }
+    """
 
     try:
-        # Setup GraphQL client
-        transport = RequestsHTTPTransport(
-            url="http://localhost:8000/graphql/",
-            verify=False,
-            retries=3,
-        )
-        client = Client(transport=transport, fetch_schema_from_transport=True)
+        response = requests.post(url, json={"query": query})
+        data = response.json().get("data", {})
 
-        # GraphQL query
-        query = gql("""
-        query {
-            allCustomers {
-                totalCount
-            }
-            allOrders {
-                totalCount
-                edges {
-                    node {
-                        totalAmount
-                    }
-                }
-            }
-        }
-        """)
+        customers = data.get("customersCount", 0)
+        orders = data.get("ordersCount", 0)
+        revenue = data.get("totalRevenue", 0)
 
-        result = client.execute(query)
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        report = f"{timestamp} - Report: {customers} customers, {orders} orders, {revenue} revenue\n"
 
-        total_customers = result["allCustomers"]["totalCount"]
-        total_orders = result["allOrders"]["totalCount"]
-        total_revenue = sum(
-            edge["node"]["totalAmount"] for edge in result["allOrders"]["edges"]
-        )
-
-        with open(log_file, "a") as f:
-            f.write(f"{timestamp} - Report: {total_customers} customers, {total_orders} orders, {total_revenue} revenue\n")
+        with open("/tmp/crm_report_log.txt", "a") as f:
+            f.write(report)
 
     except Exception as e:
-        with open(log_file, "a") as f:
-            f.write(f"{timestamp} - Error generating report: {e}\n")
+        with open("/tmp/crm_report_log.txt", "a") as f:
+            f.write(f"{datetime.now()} - Error: {e}\n")
