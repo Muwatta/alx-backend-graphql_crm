@@ -6,7 +6,7 @@ from gql.transport.requests import RequestsHTTPTransport
 
 def log_crm_heartbeat():
     import datetime
-    log_file = "/tmp/crmheartbeatlog.txt"
+    log_file = "/tmp/crm_heartbeat_log.txt"
 
     with open(log_file, "a") as f:
         f.write(f"{datetime.datetime.now()} - CRM Heartbeat OK\n")
