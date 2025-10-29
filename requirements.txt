@@ -3,4 +3,7 @@ graphene-django>=3.0
 django-filter>=23.0
 django-crontab
 gql
+celery
+django-celery-beat
+redis
 requests
